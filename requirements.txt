@@ -1,0 +1,22 @@
+# Standard libraries
+os
+io
+tempfile
+base64
+asyncio
+
+# External libraries
+PyPDF2==3.0.1
+langchain-google-genai==0.0.2
+langchain==0.0.179
+chainlit==0.3.1
+langchain-cohere==0.0.2
+langchain-community==0.0.1
+langchain-core==0.0.1
+cohere==3.7.0
+chroma==1.0.5
+requests==2.28.1
+re
+Pillow==9.2.0  # PIL is part of Pillow
+SpeechRecognition==3.8.1
+moviepy==1.0.3  # moviepy.editor
