@@ -14,15 +14,14 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.memory import ConversationBufferWindowMemory
 import chainlit as cl
 
-# Constants
 FILE_NAME = 'instidata.pdf'
 FILE_PATH = os.path.join(os.path.dirname(__file__), FILE_NAME)
 CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 100
 MODEL_NAME = "gemini-1.5-flash-001"
 MEMORY_WINDOW = 20
+CHROMA_PERSIST_DIR = '248e1937-136a-433c-bcf4-608d00e8c99b'
 
-# Initialize components
 text_splitter = RecursiveCharacterTextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
 embeddings_model = CohereEmbeddings()
 memory = ConversationBufferWindowMemory(k=MEMORY_WINDOW, input_key="question", output_key="answer")
@@ -51,12 +50,25 @@ def create_docsearch(text_splitter, pdf_text, embeddings_model):
     """Create document search index from PDF text."""
     texts = text_splitter.split_text(pdf_text)
     metadatas = [{"source": f"instidata-{i}"} for i in range(len(texts))]
-    return Chroma.from_texts(texts, embeddings_model, metadatas=metadatas)
+    docsearch = Chroma.from_texts(texts, embeddings_model, metadatas=metadatas, persist_directory=CHROMA_PERSIST_DIR)
+    docsearch.persist()
+    return docsearch
+
+def load_existing_docsearch():
+    """Load existing document search index if available."""
+    if os.path.exists(CHROMA_PERSIST_DIR) and os.listdir(CHROMA_PERSIST_DIR):
+        docsearch = Chroma(persist_directory=CHROMA_PERSIST_DIR, embedding_function=embeddings_model)
+        return docsearch
+    else:
+        return None
 
 @cl.on_chat_start
 def start():
-    pdf_text = load_pdf_text(FILE_PATH)
-    docsearch = create_docsearch(text_splitter, pdf_text, embeddings_model)
+    docsearch = load_existing_docsearch()
+    if not docsearch:
+        pdf_text = load_pdf_text(FILE_PATH)
+        docsearch = create_docsearch(text_splitter, pdf_text, embeddings_model)
+        print("dumb")
     cl.user_session.set("docsearch", docsearch)
     cl.user_session.set("memory", memory)
 
